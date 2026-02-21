@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404
 from ninja import Router, PatchDict
 from ninja_extra import paginate
 from ninja_extra.schemas import NinjaPaginationResponseSchema
+from ninja_jwt.authentication import JWTAuth
 
 from myadmin.models import Role, Permission
 from myadmin.schemas import RoleOut, RoleIn
@@ -11,7 +12,7 @@ router = Router(tags=['B2. Roles'])
 User = get_user_model()
 
 
-@router.get('', response=NinjaPaginationResponseSchema[RoleOut])
+@router.get('', response=NinjaPaginationResponseSchema[RoleOut], auth=JWTAuth())
 @paginate()
 def list_roles(request):
     """
@@ -20,7 +21,7 @@ def list_roles(request):
     return Role.objects.all()
 
 
-@router.post('', response=RoleOut)
+@router.post('', response=RoleOut, auth=JWTAuth())
 def create_role(request, payload: RoleIn):
     """
     Create a new role along with its associated permissions.
@@ -33,12 +34,12 @@ def create_role(request, payload: RoleIn):
     return role
 
 
-@router.put('/{role_id}', response=RoleOut)
+@router.put('/{role_id}', response=RoleOut, auth=JWTAuth())
 def update_role(request, payload: PatchDict[RoleIn], role_id: str):
     """
     Update an existing role's details, including its associated permissions.
     """
-    role = Role.objects.get(id=role_id)
+    role = get_object_or_404(Role, id=role_id)
 
     data = dict(payload)
     perms = data.pop('permissions', None)
@@ -56,7 +57,7 @@ def update_role(request, payload: PatchDict[RoleIn], role_id: str):
 
     return role
 
-@router.get('/{role_id}', response=RoleOut)
+@router.get('/{role_id}', response=RoleOut, auth=JWTAuth())
 def get_role(request, role_id: str):
     """
     Retrieve a specific role by its ID.

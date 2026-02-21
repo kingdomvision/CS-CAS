@@ -9,6 +9,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Response
+from ninja_jwt.exceptions import TokenError
 from ninja_jwt.tokens import RefreshToken
 from two_factor.utils import default_device
 
@@ -66,11 +67,14 @@ def logout(request):
     cookie = request.COOKIES.get(settings.REFRESH_COOKIE_KEY)
 
     if cookie:
-        token = RefreshToken(cookie)
-        user = get_object_or_404(User, id=token['uid'])
+        try:
+            token = RefreshToken(cookie)
+            user = get_object_or_404(User, id=token['uid'])
 
-        user_cache_key = SESSION_USER_CACHE_KEY.format(id=user.id)
-        cache.delete(user_cache_key)
+            user_cache_key = SESSION_USER_CACHE_KEY.format(id=user.id)
+            cache.delete(user_cache_key)
+        except TokenError:
+            pass  # Invalid/expired token; proceed to clear the cookie
 
     resp = Response({
         'message': 'Logged-in session has been cleared successfully.'

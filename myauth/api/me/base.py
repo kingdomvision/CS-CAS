@@ -104,7 +104,7 @@ def change_phone(request, data: ChangePhoneIn, purpose: AuthPurpose = AuthPurpos
 
     key_phone_change = PHONE_CHANGE_CACHE_KEY.format(id=user.id)
     phone_change = cache.get(key_phone_change)
-    if phone_change.get('status') != PHONE_CHANGE_OLD_VERIFIED:
+    if phone_change is None or phone_change.get('status') != PHONE_CHANGE_OLD_VERIFIED:
         raise APIBaseError(
             title='Error in phone number change flow',
             detail='Old phone number not verified',
@@ -136,7 +136,7 @@ def verify_new_phone(request, data: VerifySchema, purpose: AuthPurpose = AuthPur
     key_phone_change = PHONE_CHANGE_CACHE_KEY.format(id=user.id)
     phone_change = cache.get(key_phone_change)
 
-    if phone_change.get('status') != PHONE_CHANGE_NEW_AWAITING:
+    if phone_change is None or phone_change.get('status') != PHONE_CHANGE_NEW_AWAITING:
         raise APIBaseError(
             title='Error in phone number change flow',
             detail='New phone number change not initiated or old phone not verified',

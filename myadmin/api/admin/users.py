@@ -1,9 +1,11 @@
+from django.core.cache import cache
 from django.shortcuts import get_object_or_404
 from ninja import Router, PatchDict
 from ninja_extra import paginate
 from ninja_extra.schemas import NinjaPaginationResponseSchema
+from ninja_jwt.authentication import JWTAuth
 
-from common.utils import validate_user_password
+from common.utils import validate_user_password, SESSION_USER_CACHE_KEY
 from myauth.models import UserPreference
 from myadmin.models import UserRole
 from myadmin.schemas import *
@@ -12,7 +14,7 @@ router = Router(tags=['B1. Users'])
 User = get_user_model()
 
 
-@router.get('', response=NinjaPaginationResponseSchema[UserOut])
+@router.get('', response=NinjaPaginationResponseSchema[UserOut], auth=JWTAuth())
 @paginate()
 def list_users(request):
     """
@@ -21,7 +23,7 @@ def list_users(request):
     return User.objects.all()
 
 
-@router.post('', response=UserOut)
+@router.post('', response=UserOut, auth=JWTAuth())
 def create_user(request, payload: UserIn):
     """
     Create a new user along with their preferences and role association.
@@ -38,12 +40,12 @@ def create_user(request, payload: UserIn):
     return user
 
 
-@router.put('/{user_id}', response=UserOut)
+@router.put('/{user_id}', response=UserOut, auth=JWTAuth())
 def update_user(request, payload: PatchDict[UserIn], user_id: str):
     """
     Update an existing user's details, including password and role association.
     """
-    user = User.objects.get(id=user_id)
+    user = get_object_or_404(User, id=user_id)
 
     data = dict(payload)
     password = data.pop('password', None)
@@ -68,7 +70,7 @@ def update_user(request, payload: PatchDict[UserIn], user_id: str):
     return user
 
 
-@router.get('/{user_id}', response=UserOut)
+@router.get('/{user_id}', response=UserOut, auth=JWTAuth())
 def get_user(request, user_id: str):
     """
     Retrieve detailed information about a specific user by their ID.
@@ -77,21 +79,26 @@ def get_user(request, user_id: str):
     return user
 
 
-@router.post('/{user_id}/suspend', response=UserOut)
-def suspend_user(request, payload: MessageIn, user_id: str):
+@router.post('/{user_id}/suspend', response=UserOut, auth=JWTAuth())
+def suspend_user(request, user_id: str):
     """
     Suspend a user account, disabling their access to the system.
     """
-    # user = get_object_or_404(User, id=user_id)
-    # user.is_active(False)
-    #
-    # # TODO: Need to clear user sessions and related cached records (pending actions, OTPs, etc.)
-    #
-    # user.save()
-    # return user
+    user = get_object_or_404(User, id=user_id)
+    user.is_active = False
 
-@router.post('/{user_id}/unsuspend', response=UserOut)
-def unsuspend_user(request, payload: MessageIn, user_id: str):
+    user_cache_key = SESSION_USER_CACHE_KEY.format(id=user.id)
+    cache.delete(user_cache_key)
+
+    user.save()
+    return user
+
+@router.post('/{user_id}/unsuspend', response=UserOut, auth=JWTAuth())
+def unsuspend_user(request, user_id: str):
     """
     Reactivate a user account, granting their access to the system.
     """
+    user = get_object_or_404(User, id=user_id)
+    user.is_active = True
+    user.save()
+    return user

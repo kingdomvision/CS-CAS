@@ -24,6 +24,20 @@ class Discount(models.Model):
 
     class Meta:
         db_table = 'discounts'
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(ends_at__gt=models.F('starts_at')),
+                name='discounts_ends_at_after_starts_at',
+            ),
+            models.CheckConstraint(
+                condition=models.Q(min_margin_b2b__gte=0),
+                name='discounts_min_margin_b2b_non_negative',
+            ),
+            models.CheckConstraint(
+                condition=models.Q(min_margin_b2c__gte=0),
+                name='discounts_min_margin_b2c_non_negative',
+            ),
+        ]
 
 class DiscountTarget(models.Model):
     # Since composite primary keys don't support generated columns, add a surrogate primary key with a unique
