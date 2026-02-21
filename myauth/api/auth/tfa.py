@@ -87,7 +87,7 @@ def confirm_tfa_totp(request, data: TFAConfirmTOTPIn):
     # Verify the provided passcode against the TOTP secret
     totp = pyotp.TOTP(otp.secret)
     if not totp.verify(data.passcode):
-        return APIBaseError(
+        raise APIBaseError(
             title='Invalid TOTP passcode',
             status=status.HTTP_401_UNAUTHORIZED,
             errors=[{'field': 'passcode'}],

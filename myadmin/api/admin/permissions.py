@@ -1,13 +1,14 @@
 from ninja import Router
 from ninja_extra import paginate
 from ninja_extra.schemas import NinjaPaginationResponseSchema
+from ninja_jwt.authentication import JWTAuth
 from myadmin.models import Permission
 
 from myadmin.schemas import PermissionOut
 
 router = Router(tags=['B3. Permissions'])
 
-@router.get('', response=NinjaPaginationResponseSchema[PermissionOut])
+@router.get('', response=NinjaPaginationResponseSchema[PermissionOut], auth=JWTAuth())
 @paginate()
 def list_permissions(request):
     """

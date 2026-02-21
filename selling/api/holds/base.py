@@ -42,7 +42,7 @@ def release_hold(request, hold_id):
     Note: supports "owner releases" and admin releases
     """
 
-@router.post('/{hold_id}/release=request', response=ReleaseRequestOut)
+@router.post('/{hold_id}/release-request', response=ReleaseRequestOut)
 def release_request_hold(request, payload: ReasonIn, hold_id):
     """
     Creates a release request when a cabin is held by another user. In other words, allows other users to request

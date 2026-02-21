@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     'selling',
     'fx',
     'reports',
+    'import_export',
 ]
 
 MIDDLEWARE = [

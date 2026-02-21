@@ -263,7 +263,8 @@ def set_user_session(user: User, token: Token, remember_me: bool, old: Optional[
     :return: None
     """
     if old:
-        assert str(user.id) == old['uid'], 'Old token user ID does not match the provided user ID'
+        if str(user.id) != old['uid']:
+            raise ValueError('Old token user ID does not match the provided user ID')
         session_id = old['sid']
     else:
         secure_id = secrets.token_urlsafe(16)  # Generate a secure identifier
